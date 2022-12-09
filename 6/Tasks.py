@@ -18,7 +18,7 @@ for filename in os.listdir(path + r"/images"):
     plt.imshow(img_rgb)
     plt.show()
 
-    #cv2.waitKey(0)
+    cv2.waitKey(0)
 
     label_bgr = cv2.imread(label_path)
     label_rgb = cv2.cvtColor(label_bgr, cv2.COLOR_BGR2RGB)
@@ -26,7 +26,7 @@ for filename in os.listdir(path + r"/images"):
     plt.imshow(label_rgb)
     plt.show()
 
-    #cv2.waitKey(0)
+    cv2.waitKey(0)
 
     label_gray = cv2.cvtColor(label_rgb, cv2.COLOR_RGB2GRAY)
     ret, thresh = cv2.threshold(label_gray, 200, 255, cv2.THRESH_BINARY)
@@ -37,4 +37,4 @@ for filename in os.listdir(path + r"/images"):
     plt.imshow(image_out)
     plt.show()
 
-    #cv2.waitKey(0)
+    cv2.waitKey(0)
