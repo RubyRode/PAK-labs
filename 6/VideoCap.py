@@ -1,5 +1,14 @@
 import numpy as np
 import cv2
+import time
+
+
+def time_convert(sec):
+    """convert time"""
+    mins = sec // 60
+    sec = sec % 60
+    mins = mins % 60
+    return "{0}:{1}".format(int(mins), int(sec))
 
 
 def switch(gm):
@@ -21,7 +30,17 @@ ret, prev_frame = vid.read()
 prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
 prev_frame = cv2.GaussianBlur(prev_frame, (g_b_m_size, g_b_m_size), 0)
 
+font = cv2.FONT_HERSHEY_SIMPLEX
+org = (50, 50)
+fontScale = 1
+RED = (0, 0, 255)
+GREEN = (0, 255, 0)
+thick = 2
+
+
 game_state = False
+start = time.time()
+end = time.time()
 while ret:
     # read current frame and prepare it for future changes
     ret, cur_frame = vid.read()
@@ -59,7 +78,7 @@ while ret:
         # merging all found contours into one big contour
         if len(cont_size_bool) != 0:
             res_cont = np.vstack(cont_size_bool)
-            cv2.drawContours(orig, res_cont, -1, (0, 255, 0), 2)
+            cv2.drawContours(orig, res_cont, -1, (0, 255, 0), 4)
 
         # same process as above but for motion capture mask
         cnts_mov, _ = cv2.findContours(mov_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -72,23 +91,32 @@ while ret:
                 cont_size_bool.append(cnts_mov[i])
         if len(cont_size_bool) != 0:
             res_cont = np.vstack(cont_size_bool)
-            cv2.drawContours(orig, res_cont, -1, (0, 0, 255), 2)
-
+            cv2.drawContours(orig, res_cont, -1, (0, 0, 255), 4)
+        laps = start - end
+        image = cv2.putText(orig, 'RED: ' + time_convert(laps), org, font, fontScale, RED, thick, cv2.LINE_AA)
+        start = time.time()
+    else:
+        laps = start - end
+        image = cv2.putText(orig, 'GREEN: ' + time_convert(laps), org, font, fontScale, GREEN, thick, cv2.LINE_AA)
+        start = time.time()
     # merging motion capture and static object masks
     res = np.hstack((sta_dilate, mov_dilate))
 
     # change frames
     prev_frame = cur_frame
 
+    key = cv2.waitKey(1)
+    if key & 0xFF == ord("n"):
+        end = time.time()
+        game_state = switch(game_state)
+
     # show the results: two masks and the original video
     cv2.imshow("RESULT", res)
     cv2.imshow("RESULT2", orig)
 
-    key = cv2.waitKey(1)
     if key & 0xFF == ord("q"):
         break
-    if key & 0xFF == ord("n"):
-        game_state = switch(game_state)
+
 
 vid.release()
 cv2.destroyAllWindows()
