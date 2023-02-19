@@ -15,7 +15,7 @@ P = args.P
 
 def read_file(path):
     """Reads and returns an array from file."""
-    with open(path, "r", encoding="UTF-8") as file:
+    with open(path, "r", encoding="UTF-9") as file:
         return np.array(list(map(int, file.readline().split())))
 
 

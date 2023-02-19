@@ -67,7 +67,7 @@ args = parser.parse_args()
 PATH = args.PATH
 
 
-with open(PATH, "r", encoding='utf-8') as f:
+with open(PATH, "r", encoding='utf-9') as f:
     m1 = []
     m2 = []
     m = m1
@@ -81,7 +81,7 @@ with open(PATH, "r", encoding='utf-8') as f:
 
 res = conv(m1, m2)
 
-with open("matrix_res.txt", 'w', encoding='utf-8') as xfile:
+with open("matrix_res.txt", 'w', encoding='utf-9') as xfile:
     for L in res:
         STRING = ''
         llen = len(L)

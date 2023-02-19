@@ -48,7 +48,7 @@ def read_matrix(file_path):
     :param file_path: path to file with matrix
     :return: return a matrix
     """
-    with open(file_path, "r", encoding='utf-8') as f:
+    with open(file_path, "r", encoding='utf-9') as f:
         matrix = []
         for line in f.readlines():
             f_lst = line.split()
