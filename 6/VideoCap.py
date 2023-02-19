@@ -1,44 +1,122 @@
-import cv2
 import numpy as np
+import cv2
+import time
 
 
+def time_convert(sec):
+    """convert time"""
+    mins = sec // 60
+    sec = sec % 60
+    mins = mins % 60
+    return "{0}:{1}".format(int(mins), int(sec))
+
+
+def switch(gm):
+    """for switching the game state"""
+    return not gm
+
+
+vid = cv2.VideoCapture(0)
 cv2.namedWindow("RESULT")
-cv2.namedWindow("SETTINGS")
+cv2.namedWindow("RESULT2")
+cv2.createTrackbar('thresh', "RESULT", 15, 255, lambda x: x)
+cv2.createTrackbar('canny_x', "RESULT", 20, 255, lambda x: x)
+cv2.createTrackbar('canny_y', "RESULT", 20, 255, lambda x: x)
+cv2.createTrackbar('area_sta', "RESULT2", 100, 1000, lambda x: x)
+cv2.createTrackbar('area_mov', "RESULT2", 100, 1000, lambda x: x)
+g_b_m_size = 21
+# read first frame and prepare for future changes
+ret, prev_frame = vid.read()
+prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+prev_frame = cv2.GaussianBlur(prev_frame, (g_b_m_size, g_b_m_size), 0)
 
-cap = cv2.VideoCapture(0)
-cv2.createTrackbar('h1', "SETTINGS", 0, 255, lambda x:x)
-cv2.createTrackbar('s1', "SETTINGS", 0, 255, lambda x:x)
-cv2.createTrackbar('v1', "SETTINGS", 0, 255, lambda x:x)
-cv2.createTrackbar('h2', "SETTINGS", 255, 255, lambda x:x)
-cv2.createTrackbar('s2', "SETTINGS", 255, 255, lambda x:x)
-cv2.createTrackbar('v2', "SETTINGS", 255, 255, lambda x:x)
-crange = [0, 0, 0, 0, 0, 0]
-ret, frame1 = cap.read()
-while True:
-
-    ret, frame2 = cap.read()
-    key = cv2.waitKey(20) & 0xff
-    if ret:
-
-        hsv_2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2HSV)
-
-        h1 = cv2.getTrackbarPos('h1', "SETTINGS")
-        s1 = cv2.getTrackbarPos('s1', "SETTINGS")
-        v1 = cv2.getTrackbarPos('v1', "SETTINGS")
-        h2 = cv2.getTrackbarPos('h2', "SETTINGS")
-        s2 = cv2.getTrackbarPos('s2', "SETTINGS")
-        v2 = cv2.getTrackbarPos('v2', "SETTINGS")
-
-        h_min = np.array((h1, s1, v1), np.uint8)
-        h_max = np.array((h2, s2, v2), np.uint8)
-        thresh = cv2.inRange(hsv_2, h_min, h_max)
+font = cv2.FONT_HERSHEY_SIMPLEX
+org = (50, 50)
+fontScale = 1
+RED = (0, 0, 255)
+GREEN = (0, 255, 0)
+thick = 2
 
 
+game_state = False
+start = time.time()
+end = time.time()
+while ret:
+    # read current frame and prepare it for future changes
+    ret, cur_frame = vid.read()
+    orig = cur_frame.copy()
+    cur_frame = cv2.cvtColor(cur_frame, cv2.COLOR_BGR2GRAY)
+    cur_frame = cv2.GaussianBlur(cur_frame, (g_b_m_size, g_b_m_size), 0)
 
-        cv2.imshow('Frame', thresh)
+    # find the difference between two frames and threshold them => motion capture mask
+    diff = cv2.absdiff(cur_frame, prev_frame)
+    threshold = cv2.getTrackbarPos('thresh', "RESULT")
+    thresh = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)[1]
 
-    frame1 = frame2
-    if key == 27 | (not ret):
-        cv2.destroyAllWindows()
-        cap.release()
+    # find the mask for boundaries of the static objects => static objects mask
+    canny_x = cv2.getTrackbarPos('canny_x', "RESULT")
+    canny_y = cv2.getTrackbarPos('canny_y', "RESULT")
+    static = cv2.Canny(cur_frame.copy(), canny_x, canny_y)
+
+    # dilate the masks
+    mov_erode = cv2.erode(thresh, None, 2)
+    mov_dilate = cv2.dilate(mov_erode, np.ones((3, 3), 'uint8'), 3)
+    sta_dilate = cv2.dilate(static, np.ones((3, 3), 'uint8'), 2)
+
+    if game_state:
+        # find contours from static objects mask
+        cnts_sta, _ = cv2.findContours(sta_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        area_sta = cv2.getTrackbarPos('area_sta', "RESULT2")
+
+        # find contours with the perimeter more than area_sta
+        cont_size_bool = []
+        for i in range(0, len(cnts_sta)):
+            if cv2.arcLength(cnts_sta[i], True) > area_sta:
+                cont_size_bool.append(cnts_sta[i])
+
+        # merging all found contours into one big contour
+        if len(cont_size_bool) != 0:
+            res_cont = np.vstack(cont_size_bool)
+            cv2.drawContours(orig, res_cont, -1, (0, 255, 0), 4)
+
+        # same process as above but for motion capture mask
+        cnts_mov, _ = cv2.findContours(mov_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        area_mov = cv2.getTrackbarPos('area_mov', "RESULT2")
+
+        cont_size_bool = []
+        for i in range(0, len(cnts_mov)):
+            if cv2.arcLength(cnts_mov[i], True) > area_mov:
+                cont_size_bool.append(cnts_mov[i])
+        if len(cont_size_bool) != 0:
+            res_cont = np.vstack(cont_size_bool)
+            cv2.drawContours(orig, res_cont, -1, (0, 0, 255), 4)
+        laps = start - end
+        image = cv2.putText(orig, 'RED: ' + time_convert(laps), org, font, fontScale, RED, thick, cv2.LINE_AA)
+        start = time.time()
+    else:
+        laps = start - end
+        image = cv2.putText(orig, 'GREEN: ' + time_convert(laps), org, font, fontScale, GREEN, thick, cv2.LINE_AA)
+        start = time.time()
+    # merging motion capture and static object masks
+    res = np.hstack((sta_dilate, mov_dilate))
+
+    # change frames
+    prev_frame = cur_frame
+
+    key = cv2.waitKey(1)
+    if key & 0xFF == ord("n"):
+        end = time.time()
+        game_state = switch(game_state)
+
+    # show the results: two masks and the original video
+    cv2.imshow("RESULT", res)
+    cv2.imshow("RESULT2", orig)
+
+    if key & 0xFF == ord("q"):
         break
+
+
+vid.release()
+cv2.destroyAllWindows()
