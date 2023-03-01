@@ -1,12 +1,11 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score
 import numpy as np
-import matplotlib.pyplot as plt
 
 df_main = pd.read_csv(r"/home/ruby/PycharmProjects/PAK-labs/titanic/train.csv")
+
 
 # random forest, xgboost, logistic regression, KNN
 
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     # получаем точность
     print("accuracy: ", accuracy_score(test_y, predict))
 
-# 2 задание
+    # 2 задание
     num = 8
     importances = model.feature_importances_
     indices = np.argsort(importances)
@@ -77,4 +76,3 @@ if __name__ == '__main__':
     model.fit(new_test_data, new_test_data_y)
     predict = model.predict(new_test_data)
     print("accuracy: ", accuracy_score(new_test_data_y, predict))
-
