@@ -4,6 +4,7 @@ from Activations import relu, tanh, softmax
 
 class Neuron:
     def __init__(self, size):
+        """Neuron constructor"""
         self.input_size = size[0]
         self.output_size = size[1]
         self.weights = np.random.randn(self.input_size)
@@ -11,6 +12,7 @@ class Neuron:
         self.act = {'soft': softmax, 'tanh': tanh, 'relu': relu}
 
     def forward(self, input_data, activator):
+        """Neuron activation"""
         return self.act[activator](np.dot(self.weights, input_data) + self.bias)
 
 
@@ -33,8 +35,8 @@ class Model:
 
 if __name__ == '__main__':
     np.random.seed(0)
-    data = np.random.randn(256)
-    in_outs = [(256, 64), (64, 16), (16, 4)]
-    model = Model(in_outs)
-    res = model.forward(data, 'soft')
+    data = np.random.randn(256)  # initialize some data
+    in_outs = [(256, 64), (64, 16), (16, 4)]  # initialize input and output of each neuron
+    model = Model(in_outs)  # initialize model
+    res = model.forward(data, 'soft')  # forward prop through the model
     print(res, '\n', sum(res))
