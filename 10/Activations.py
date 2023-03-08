@@ -14,3 +14,13 @@ def relu(x):
 def tanh(x):
     """Hyperbolic tangent function"""
     return np.tanh(x)
+
+
+def sigmoid(x):
+    """Sigmoid function"""
+    return 1/(1 + np.exp(-x))
+
+
+def sigmoid_derivative(x):
+    """"Sigmoid derivative function"""
+    return x * (1 - x)
