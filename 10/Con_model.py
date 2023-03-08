@@ -16,7 +16,7 @@ class Neuron:
         return self.act[activator](np.dot(self.weights, input_data) + self.bias)
 
 
-class Model:
+class ConModel:
 
     def __init__(self, sizes):
         """Model initialization"""
@@ -37,6 +37,6 @@ if __name__ == '__main__':
     np.random.seed(0)
     data = np.random.randn(256)  # initialize some data
     in_outs = [(256, 64), (64, 16), (16, 4)]  # initialize input and output of each neuron
-    model = Model(in_outs)  # initialize model
+    model = ConModel(in_outs)  # initialize model
     res = model.forward(data, 'soft')  # forward prop through the model
     print(res, '\n', sum(res))
